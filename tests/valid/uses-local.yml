@@ -1,0 +1,6 @@
+jobs:
+  uses-no-comment:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Local Action
+        uses: ./.github/actions/my-action

@@ -1,0 +1,15 @@
+name: "Verify GitHub Action SHA Pinning"
+description: "Scans all workflow files to ensure all GitHub Actions are pinned to a valid SHA that exists on the default branch of the action's repository."
+runs:
+  using: "composite"
+  steps:
+    - name: Set GitHub Path
+      run: echo "$GITHUB_ACTION_PATH" >> $GITHUB_PATH
+      shell: bash
+      env:
+        GITHUB_ACTION_PATH: ${{ github.action_path }}
+    - name: Verify GitHub Action SHA Pinning
+      run: verify-action-sha.sh
+      shell: bash
+      env:
+        TOKEN: ${{ secrets.GITHUB_TOKEN }}

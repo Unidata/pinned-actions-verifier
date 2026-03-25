@@ -1,0 +1,25 @@
+name: Test Pinned Actions Verifier
+
+on:
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Run tests
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: ./run-tests.sh
+        shell: bash
+      - name: Check project workflows
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: ./verify-action-sha.sh
+        shell: bash
