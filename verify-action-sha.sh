@@ -45,6 +45,10 @@ for file in $workflow_files; do
     repo_part=$(echo "$action" | cut -d'@' -f1)
     ref_part=$(echo "$action" | cut -d'@' -f2)
 
+    # If repo_part has more than one slash, it contains a subdirectory
+    # We only want the org/repo part for API calls
+    repo_only=$(echo "$repo_part" | cut -d'/' -f1,2)
+
     # 2. check that the github action is SHA pinned (40 characters of hex)
     if [[ ! "$ref_part" =~ ^[0-9a-f]{40}$ ]]; then
       echo "    [ERROR] Not pinned to a SHA: $ref_part"
@@ -56,11 +60,11 @@ for file in $workflow_files; do
     # 4. that the SHA exists on the default branch of the repository
 
     # First get default branch and repo info
-    repo_api_url="https://api.github.com/repos/$repo_part"
+    repo_api_url="https://api.github.com/repos/$repo_only"
     repo_info=$(curl -s "${auth_header[@]}" "$repo_api_url")
 
     if echo "$repo_info" | grep -q '"message": "Not Found"'; then
-      echo "    [ERROR] Repository $repo_part not found"
+      echo "    [ERROR] Repository $repo_only not found"
       exit_code=1
       continue
     elif echo "$repo_info" | grep -q '"message": "API rate limit exceeded"'; then
@@ -72,16 +76,14 @@ for file in $workflow_files; do
     default_branch=$(echo "$repo_info" | jq -r '.default_branch')
 
     if [ -z "$default_branch" ] || [ "$default_branch" == "null" ]; then
-      echo "    [ERROR] Could not determine default branch for $repo_part"
+      echo "    [ERROR] Could not determine default branch for $repo_only"
       exit_code=1
       continue
     fi
 
     # Check if SHA is reachable from default branch using comparison
-    compare_url="https://api.github.com/repos/${repo_part}/compare/${default_branch}...${ref_part}"
-    compare_info=$(curl -s "${auth_header[@]}" "$compare_url")
-
-    status=$(echo "$compare_info" | jq -r '.status')
+    compare_url="https://api.github.com/repos/${repo_only}/compare/${default_branch}...${ref_part}"
+    status=$(curl -s "${auth_header[@]}" "$compare_url" | jq -r '.status' 2>/dev/null)
 
     # If ref_part is on default_branch, status will be 'identical' or 'behind' (if it's an ancestor)
     # If it's not on default_branch, it might be 'ahead' or 'diverged'
