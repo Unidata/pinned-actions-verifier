@@ -2,6 +2,15 @@
 # Copyright (c) 2026 University Corporation for Atmospheric Research/Unidata
 # See LICENSE for license information.
 
+# Check for required commands
+declare -a required_cmds=("curl" "jq")
+for cmd in "${required_cmds[@]}"; do
+  if ! command -v "$cmd" &>/dev/null; then
+    echo "Error: required command '$cmd' not found." >&2
+    exit 1
+  fi
+done
+
 # Check for GitHub token
 auth_header=()
 if [ -n "$TOKEN" ]; then
@@ -22,9 +31,21 @@ if [ -z "$workflow_files" ]; then
   exit 0
 fi
 
+set -o pipefail
+
 check_workflow_file() {
-  local exit_code=0
+  # Declare local variables
+  # Input / function state
   local file="$1"
+  local exit_code=0
+  local -a actions=()
+
+  # Workflow parsing
+  local action action_dir
+
+  # GitHub repository / API data
+  local repo_part ref_part repo_only
+  local repo_api_url repo_info default_branch compare_url status
 
   echo "Checking $file..."
 
@@ -48,18 +69,16 @@ check_workflow_file() {
       if [ -f "$action_dir/action.yml" ]; then
         if ! check_workflow_file "$action_dir/action.yml"; then
           exit_code=1
-          continue
         fi
       elif [ -f "$action_dir/action.yaml" ]; then
         if ! check_workflow_file "$action_dir/action.yaml"; then
           exit_code=1
-          continue
         fi
       else
         echo "      [ERROR] Local action directory $action_dir does not contain action.yml or action.yaml"
         exit_code=1
-        continue
       fi
+      continue
     fi
 
     echo "  Action: $action"
