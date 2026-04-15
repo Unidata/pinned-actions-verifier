@@ -1,3 +1,7 @@
+#!/usr/bin/env bash
+# Copyright (c) 2026 University Corporation for Atmospheric Research/Unidata
+# See LICENSE for license information.
+
 # This script runs verify-action-sha.sh against test cases in tests/valid and tests/invalid.
 # Tests in tests/valid are expected to return a 0 exit code.
 # Tests in tests/invalid are expected to return a 1 exit code.

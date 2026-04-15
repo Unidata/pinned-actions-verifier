@@ -1,3 +1,7 @@
+#!/usr/bin/env bash
+# Copyright (c) 2026 University Corporation for Atmospheric Research/Unidata
+# See LICENSE for license information.
+
 # Check for GitHub token
 auth_header=()
 if [ -n "$TOKEN" ]; then
@@ -18,19 +22,44 @@ if [ -z "$workflow_files" ]; then
   exit 0
 fi
 
-exit_code=0
+check_workflow_file() {
+  local exit_code=0
+  local file="$1"
 
-for file in $workflow_files; do
   echo "Checking $file..."
 
   # Parsing to extract action names/references from 'uses:' lines
-  # This handles trailing comments and whitespace, and ignores 'uses:' within run: blocks
+  # This handles trailing comments and whitespace
   actions=$(grep -E '^\s*-\s*uses:|[[:space:]]uses:' "$file" | sed -E 's/.*uses:[[:space:]]*//' | sed 's/#.*//' | sed 's/[[:space:]]*$//')
 
   for action in $actions; do
-    # Skip local actions starting with ./ or ../
+    # Handle local actions starting with ./ or ../
     if [[ $action == ./* ]] || [[ $action == ../* ]]; then
-      continue
+      echo "  Action: $action"
+      # The directory for the action is relative to the file containing the reference
+      # However, GitHub actions are usually relative to the repository root.
+      # Let's check both possibilities.
+      action_dir=$(dirname "$file")/$action
+      if [ ! -d "$action_dir" ]; then
+        # Check relative to repo root
+        action_dir=$action
+      fi
+
+      if [ -f "$action_dir/action.yml" ]; then
+        if ! check_workflow_file "$action_dir/action.yml"; then
+          exit_code=1
+          continue
+        fi
+      elif [ -f "$action_dir/action.yaml" ]; then
+        if ! check_workflow_file "$action_dir/action.yaml"; then
+          exit_code=1
+          continue
+        fi
+      else
+        echo "      [ERROR] Local action directory $action_dir does not contain action.yml or action.yaml"
+        exit_code=1
+        continue
+      fi
     fi
 
     echo "  Action: $action"
@@ -98,6 +127,9 @@ for file in $workflow_files; do
       exit_code=1
     fi
   done
-done
+  return $exit_code
+}
 
-exit $exit_code
+for file in $workflow_files; do
+  check_workflow_file "$file"
+done
