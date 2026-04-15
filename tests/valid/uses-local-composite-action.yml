@@ -3,4 +3,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Local Action
-        uses: ./.github/actions/my-action
+        uses: ./tests/local_composite_action/valid
