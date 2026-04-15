@@ -20,6 +20,24 @@ This project was largely bootstrapped using Junie, the AI coding agent by JetBra
 
 ## Usage
 
+### GitHub Action Workflow Example:
+
+```yaml
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-pinned-actions:
+    name: Verify Pinned Actions
+    runs-on: ubuntu-slim
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: unidata/pinned-actions-verifier@f35d45122e5b5db9d5c1726cbf890d3d4d980568 # v1.0.0
+```
+
 ### Run against all workflows
 If no argument is provided, the script searches for all `.yml` and `.yaml` files in the `.github/workflows` directory.
 
