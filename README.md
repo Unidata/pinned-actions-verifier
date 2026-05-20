@@ -35,7 +35,7 @@ jobs:
     runs-on: ubuntu-slim
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-      - uses: unidata/pinned-actions-verifier@f35d45122e5b5db9d5c1726cbf890d3d4d980568 # v1.0.0
+      - uses: unidata/pinned-actions-verifier@a7df1b8ac192ab2903c6b04b64827da1925aac69 # v1.0.1
 ```
 
 ### Run against all workflows
