@@ -57,26 +57,33 @@ check_workflow_file() {
     # Handle local actions starting with ./ or ../
     if [[ $action == ./* ]] || [[ $action == ../* ]]; then
       echo "  Action: $action"
-      # The directory for the action is relative to the file containing the reference
-      # However, GitHub actions are usually relative to the repository root.
-      # Let's check both possibilities.
-      action_dir=$(dirname "$file")/$action
-      if [ ! -d "$action_dir" ]; then
-        # Check relative to repo root
-        action_dir=$action
-      fi
-
-      if [ -f "$action_dir/action.yml" ]; then
-        if ! check_workflow_file "$action_dir/action.yml"; then
-          exit_code=1
-        fi
-      elif [ -f "$action_dir/action.yaml" ]; then
-        if ! check_workflow_file "$action_dir/action.yaml"; then
+      if [ -f "$action" ]; then
+         # If local action points to a local workflow file, check it
+        if ! check_workflow_file "$action"; then
           exit_code=1
         fi
       else
-        echo "      [ERROR] Local action directory $action_dir does not contain action.yml or action.yaml"
-        exit_code=1
+          # The directory for the local action is relative to the file containing the reference
+          # However, GitHub actions are usually relative to the repository root.
+          # Let's check both possibilities.
+          action_dir=$(dirname "$file")/$action
+          if [ ! -d "$action_dir" ]; then
+            # Check relative to repo root
+            action_dir=$action
+          fi
+
+          if [ -f "$action_dir/action.yml" ]; then
+            if ! check_workflow_file "$action_dir/action.yml"; then
+              exit_code=1
+            fi
+          elif [ -f "$action_dir/action.yaml" ]; then
+            if ! check_workflow_file "$action_dir/action.yaml"; then
+              exit_code=1
+            fi
+          else
+            echo "      [ERROR] Local action directory $action_dir does not contain action.yml or action.yaml"
+            exit_code=1
+          fi
       fi
       continue
     fi
@@ -149,6 +156,11 @@ check_workflow_file() {
   return $exit_code
 }
 
+exit_code=0
 for file in $workflow_files; do
-  check_workflow_file "$file"
+  if ! check_workflow_file "$file"; then
+    exit_code=1
+  fi
 done
+
+exit "$exit_code"
