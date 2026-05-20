@@ -34,6 +34,27 @@ run_tests "tests/valid" 0
 # Run invalid tests
 run_tests "tests/invalid" 1
 
+# Check that if one test fails, the checker returns a non-zero exit code, independent of the order
+VALID="tests/valid/uses-with-comment.yml"
+INVALID="tests/invalid/uses-with-tag.yml"
+
+echo "----------------------------------------"
+echo "Multifile Failure Order Tests"
+if ./verify-action-sha.sh "$VALID $INVALID"; then
+  echo "[FAIL] Multifile Failure Order Test for VALID then INVALID failed."
+  EXIT_CODE=1
+else
+  echo "[PASS] Multifile Failure Order Test for VALID then INVALID passed."
+fi
+
+if ./verify-action-sha.sh "$INVALID $VALID"; then
+  echo "[FAIL] Multifile Failure Order Test for INVALID then VALID failed."
+  EXIT_CODE=1
+else
+  echo "[PASS] Multifile Failure Order Test for INVALID then VALID passed."
+fi
+echo "----------------------------------------"
+
 if [ $EXIT_CODE -eq 0 ]; then
   echo "All tests passed!"
 else
